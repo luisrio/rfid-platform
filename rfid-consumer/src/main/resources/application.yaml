@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: rfid-consumer
+
+rfid:
+  mqtt:
+    url: tcp://localhost:1883
+    clientId: rfid-consumer-01
+    topics:
+      - tienda/lecturas/probador/PROBADOR-01
+      - tienda/lecturas/salida/GATE-01
+      - tienda/lecturas/caja/CAJA-01
+      - tienda/pagos/confirmados
+    qos: 1
+
+  filter:
+    minRssi: -70
+    dedupWindowMs: 1000
+    paidTtlMinutes: 30
+
+  topics:
+    cashierPrefix: tienda/lecturas/caja/
+    exitPrefix: tienda/lecturas/salida/
+    fittingPrefix: tienda/lecturas/probador/
+    paymentPrefix: tienda/pagos/confirmados
+    alerts: tienda/alertas/seguridad
+
+  monitoring:
+    logEveryMessages: 200
+    fittingSeenTtlMinutes: 1440

@@ -1,0 +1,58 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: rfid-broker
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto-config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto-data:/mosquitto/data
+      - ./mosquitto-log:/mosquitto/log
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_pub -h localhost -t healthcheck -m ok -q 0 >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  mqtt-explorer:
+    image: smeagolworms4/mqtt-explorer:latest
+    container_name: mqtt-explorer-ui
+    ports:
+      - "4000:80"
+    environment:
+      HTTP_PORT: 80
+    volumes:
+      - ./explorer-data:/tmp
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    restart: unless-stopped
+
+  rfid-consumer:
+    build:
+      context: ../rfid-consumer
+      dockerfile: Dockerfile
+    container_name: rfid-consumer-app
+    environment:
+      RFID_MQTT_URL: ${RFID_BROKER_URL:-tcp://mosquitto:1883}
+      RFID_MQTT_CLIENTID: rfid-consumer-01
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    restart: unless-stopped
+
+  rfid-producer:
+    build:
+      context: ../rfid-producer
+      dockerfile: Dockerfile
+    container_name: rfid-producer-app
+    command:
+      - "--broker"
+      - "${RFID_BROKER_URL:-tcp://mosquitto:1883}"
+      - "--profile"
+      - "${RFID_PROFILE:-medium}"
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    restart: unless-stopped

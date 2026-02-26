@@ -1,0 +1,11 @@
+package org.example.rfid.util;
+
+public final class Time {
+
+    private Time() {
+    }
+
+    public static long nowMillis() {
+        return System.currentTimeMillis();
+    }
+}
